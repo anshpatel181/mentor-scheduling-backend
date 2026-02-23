@@ -10,9 +10,9 @@ import { v4 as uuidv4 } from "uuid";
 
 const prisma = new PrismaClient();
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "workpalak25@gmail.com";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Palak@123";
-const ADMIN_NAME = process.env.ADMIN_NAME || "Palak Dwivedi.";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_NAME = process.env.ADMIN_NAME;
 
 async function main() {
   const existing = await prisma.user.findUnique({
