@@ -19,7 +19,10 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: [
+    "http://localhost:5173",
+    "https://mentor-scheduling-frontend.vercel.app"
+  ],
   credentials: true
 }));
 
