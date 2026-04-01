@@ -93,9 +93,11 @@ export async function getWeekly(req, res, next) {
 
 export async function saveBatch(req, res, next) {
   try {
-    const { slots } = req.body;
+    const slots = req.body;
     const callerId = req.userId;
     const role = req.userRole;
+
+    console.log(slots);
     if (!Array.isArray(slots)) {
       return res.status(400).json({ error: "slots array required" });
     }

@@ -18,5 +18,5 @@ adminRoutes.get("/users", listUsers);
 adminRoutes.get("/mentors", listMentors);
 adminRoutes.post("/create-user", createUser);
 adminRoutes.get("/availability/:userId", getAvailabilityForUser);
-adminRoutes.get("/availability/:userId/overlap", getOverlappingSlots);
+adminRoutes.get("/overlap/:userId/:mentorId", getOverlappingSlots);
 adminRoutes.post("/meetings", scheduleMeeting);

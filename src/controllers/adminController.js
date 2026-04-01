@@ -9,10 +9,22 @@ export async function listUsers(req, res, next) {
   try {
     const users = await prisma.user.findMany({
       where: { role: "USER" },
-      select: { id: true, name: true, email: true, timezone: true, createdAt: true },
-      orderBy: { name: "asc" },
+      select: { id: true, name: true, email: true },
     });
-    res.json(users);
+
+    const enrichedUsers = users.map((user, index) => ({
+      ...user,
+      tags:
+        index % 2 === 0
+          ? ["tech"]
+          : ["communication"],
+      description:
+        index % 2 === 0
+          ? "Needs help with coding interviews"
+          : "Needs help with resume",
+    }));
+
+    res.json(enrichedUsers);
   } catch (e) {
     next(e);
   }
@@ -22,10 +34,23 @@ export async function listMentors(req, res, next) {
   try {
     const mentors = await prisma.user.findMany({
       where: { role: "MENTOR" },
-      select: { id: true, name: true, email: true, timezone: true, createdAt: true },
-      orderBy: { name: "asc" },
+      select: { id: true, name: true, email: true },
     });
-    res.json(mentors);
+
+    // 🔥 Add tags + description manually
+    const enrichedMentors = mentors.map((mentor, index) => ({
+      ...mentor,
+      tags:
+        index % 2 === 0
+          ? ["tech", "communication"]
+          : ["non-tech", "resume"],
+      description:
+        index % 2 === 0
+          ? "Experienced in big tech companies"
+          : "Expert in resume building",
+    }));
+
+    res.json(enrichedMentors);
   } catch (e) {
     next(e);
   }
@@ -130,29 +155,49 @@ function rangesOverlap(aStart, aEnd, bStart, bEnd) {
 
 export async function getOverlappingSlots(req, res, next) {
   try {
-    const { userId } = req.params;
-    const { startTime, endTime } = req.query;
-    if (!startTime || !endTime) {
-      return res.status(400).json({ error: "startTime and endTime required" });
-    }
-    const start = new Date(startTime);
-    const end = new Date(endTime);
+    const { userId, mentorId } = req.params;
 
-    const slots = await prisma.availability.findMany({
+    // Get USER slots
+    const userSlots = await prisma.availability.findMany({
       where: {
-        OR: [
-          { userId, role: "USER" },
-          { mentorId: userId, role: "MENTOR" },
-        ],
-      },
-      orderBy: [{ date: "asc" }, { startTime: "asc" }],
+        userId,
+        role: "USER"
+      }
     });
 
-    const overlapping = slots.filter((s) =>
-      rangesOverlap(start, end, s.startTime, s.endTime)
-    );
+    // Get MENTOR slots
+    const mentorSlots = await prisma.availability.findMany({
+      where: {
+        mentorId,
+        role: "MENTOR"
+      }
+    });
 
-    res.json(overlapping);
+    const overlaps = [];
+
+    for (let u of userSlots) {
+      for (let m of mentorSlots) {
+        const start = new Date(Math.max(
+          new Date(u.startTime),
+          new Date(m.startTime)
+        ));
+
+        const end = new Date(Math.min(
+          new Date(u.endTime),
+          new Date(m.endTime)
+        ));
+
+        if (start < end) {
+          overlaps.push({
+            startTime: start,
+            endTime: end
+          });
+        }
+      }
+    }
+
+    res.json(overlaps);
+
   } catch (e) {
     next(e);
   }
@@ -161,6 +206,7 @@ export async function getOverlappingSlots(req, res, next) {
 export async function scheduleMeeting(req, res, next) {
   try {
     const adminId = req.userId;
+    console.log(req.body);
     const { title, startTime, endTime, date, timezone, participantEmails } = req.body;
 
     if (!title?.trim()) {
@@ -207,9 +253,9 @@ export async function scheduleMeeting(req, res, next) {
         title: title.trim(),
         startTime: start,
         endTime: end,
-        meetLink: null,
-        calendarEventId: null,
-        googleEventId: null,
+        // meetLink: null,
+        // calendarEventId: null,
+        // googleEventId: null,
       },
     });
 
